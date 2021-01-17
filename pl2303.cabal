@@ -1,0 +1,34 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.3.
+--
+-- see: https://github.com/sol/hpack
+
+name:           pl2303
+version:        0.1.0.0
+category:       Hardware
+homepage:       https://github.com/renesat/pl2303
+author:         Smolyakov Ivan
+maintainer:     smol.ivan97@gmail.com
+copyright:      2021 Smolyakov Ivan
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      System.Hardware.PL2303
+      System.Hardware.PL2303.Cli
+  other-modules:
+      Paths_pl2303
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base >=4.7 && <5
+    , bytestring
+    , hex
+    , serialport
+  default-language: Haskell2010

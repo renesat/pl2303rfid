@@ -1,0 +1,24 @@
+name:                pl2303
+version:             0.1.0.0
+# description:
+homepage:            https://github.com/renesat/pl2303
+license:             MIT
+author:              Smolyakov Ivan
+maintainer:          smol.ivan97@gmail.com
+copyright:           2021 Smolyakov Ivan
+category:            Hardware
+
+extra-source-files:
+  - README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - serialport
+  - bytestring
+  - hex
+
+
+ghc-options: -Wall
+
+library:
+  source-dirs:      src
