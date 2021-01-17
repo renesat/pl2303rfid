@@ -8,19 +8,31 @@ import           Data.Bits (xor, shiftL, shiftR)
 import           Data.Hex (hex)
 
 -- | Supported commands pl2303
-data Command = Info | Beep | LedColor | Read | Write2 | Write3
+data Command
+  = Info -- ^ Get model description
+  | Beep -- ^ Beep
+  | LedColor -- ^ Change LED color
+  | Read -- ^ Read rfid code
+  | Write2 -- ^ First method for write code to rfid
+  | Write3 -- ^ Second method for write code to rfid
   deriving (Read, Show, Eq)
 
 {-|
   Get command code.
 
   Commands conformity:
-  * Info     -> 0x0102
-  * Beep     -> 0x0103
-  * LedColor -> 0x0104
-  * Read     -> 0x010C
-  * Write2   -> 0x020C
-  * Write3   -> 0x030C
+
+  * 'Info'     -> 0x0102
+
+  * 'Beep'     -> 0x0103
+
+  * 'LedColor' -> 0x0104
+
+  * 'Read'     -> 0x010C
+
+  * 'Write2'   -> 0x020C
+
+  * 'Write3'   -> 0x030C
 -}
 commandCode :: Command -> B.ByteString
 commandCode command = B.pack $ map chr code
