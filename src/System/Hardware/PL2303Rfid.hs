@@ -187,14 +187,14 @@ encodeRequest req = reqHead <> reqLength <> reqCommand <> reqData <> reqChecksum
 
 requestParser :: Parser Request
 requestParser = do
-  (string $ encodeCode [170, 221]) <?> "Not correct start code (0xAA 0xDD)"
+  _startCode <- (string $ encodeCode [170, 221]) <?> "Not correct start code (0xAA 0xDD)"
 
   reqLength <- return . decodeLength =<< AP.take 2
   reqCommand <- commandParser
   reqBody <- AP.take (reqLength - 3)
 
   realChecksum <- return $ chr $ dataChecksum (encodeCommand reqCommand <> reqBody)
-  checksum <- char realChecksum <?> "Not correct checksum"
+  _checksum <- char realChecksum <?> "Not correct checksum"
 
   return $ Request reqCommand reqBody
 
