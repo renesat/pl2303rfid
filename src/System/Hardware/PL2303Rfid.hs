@@ -198,6 +198,37 @@ requestParser = do
 decodeRequest :: B.ByteString -> Either String Request
 decodeRequest = parseOnly requestParser
 
+encodeResponse :: Response -> B.ByteString
+encodeResponse resp = respHead <> respLength <> respCommand <> respStatus <> respData <> respChecksum
+  where
+    respHead = encodeCode [170, 221] -- 0xAA 0xDD
+    respCommand = encodeCommand $ responseCommand resp
+    respStatus = encodeStatus $ responseStatus resp
+    respData = responseBody resp
+    dataLength = (B.length respData) + 4
+    respLength = encodeLength dataLength
+    respChecksum = B.singleton . chr $ dataChecksum (respCommand <> respStatus <> respData)
+
+responseParser :: Parser Response
+responseParser = do
+  _startCode <- (string $ encodeCode [170, 221]) <?> "Not correct start code (0xAA 0xDD)"
+
+  respLength <- return . decodeLength =<< AP.take 2
+  respCommand <- commandParser
+  respStatus <- statusParser
+  respBody <- AP.take (respLength - 4)
+
+  realChecksum <- return $ chr $ dataChecksum (  encodeCommand respCommand
+                                              <> encodeStatus respStatus
+                                              <> respBody
+                                              )
+  _checksum <- char realChecksum <?> "Not correct checksum"
+
+  return $ Response respCommand respStatus respBody
+
+decodeResponse :: B.ByteString -> Either String Response
+decodeResponse = parseOnly responseParser
+
 
 -- sendRequest :: SerialPort -> Command -> B.ByteString -> IO Int
 -- sendRequest s c d = send s request
