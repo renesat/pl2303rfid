@@ -179,18 +179,15 @@ splitBySizes sizes d = foldl f ([], d) sizes
                    in (res ++ [prev], next)
 
 
-decodeRequest :: B.ByteString -> Request
-decodeRequest bs = Request (decodeCommand $ encodeCode reqCommand) (encodeCode reqBody)
+decodeRequest :: B.ByteString -> Either String Request
+decodeRequest bs
+  | checksum /= dataChecksum (encodeCode reqCommand <> encodeCode reqBody) = Left "Not correct checksum"
+  | otherwise = Right $ Request (decodeCommand $ encodeCode reqCommand) (encodeCode reqBody)
   where
     ((_reqHead:reqLengthCode:[]), allData) = splitBySizes [2, 2] $ decodeCode bs
     reqLength = decodeLength reqLengthCode
-    ((reqCommand:reqBody:[]), checksum) = splitBySizes [2, reqLength - 3] allData
-    -- -- reqHead = encodeCode [170, 221] -- 0xAA 0xDD
-    -- reqCommand = encodeCommand $ requestCommand req
-    -- reqData = requestBody req
-    -- dataLength = (B.length reqData) + 3
-    -- reqLength = encodeLength dataLength
-    -- reqChecksum = B.singleton . chr $ dataChecksum reqData
+    ((reqCommand:reqBody:[]), (checksum:[])) = splitBySizes [2, reqLength - 3] allData
+
 
 
 
