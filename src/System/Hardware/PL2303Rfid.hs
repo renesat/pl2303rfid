@@ -125,16 +125,18 @@ encodeStatus status = B.singleton $ chr code
       ReadError1 -> 2 -- 0x02
       ReadError2 -> 3 -- 0x03
 
-decodeStatus :: B.ByteString -> Status
-decodeStatus bs = status
-  where
-    code = (decodeCode bs) !! 0
-    status = case code of
-      0 -> Ok         -- 0x00
-      1 -> Error      -- 0x01
-      2 -> ReadError1 -- 0x02
-      3 -> ReadError2 -- 0x03
+statusParser :: Parser Status
+statusParser = do
+  code <- return . ord =<< anyChar
+  case code of
+    0 -> return Ok         -- 0x0102
+    1 -> return Error      -- 0x0103
+    2 -> return ReadError1 -- 0x0104
+    3 -> return ReadError2 -- 0x010C
+    otherwise -> fail "Not correct status code"
 
+decodeStatus :: B.ByteString -> Either String Status
+decodeStatus = parseOnly statusParser
 
 -- | Request type
 data Request = Request
