@@ -169,7 +169,7 @@ encodeRequest req = reqHead <> reqLength <> reqCommand <> reqData <> reqChecksum
     reqData = requestBody req
     dataLength = (B.length reqData) + 3
     reqLength = encodeLength dataLength
-    reqChecksum = B.singleton . chr $ dataChecksum reqData
+    reqChecksum = B.singleton . chr $ dataChecksum (reqCommand <> reqData)
 
 splitBySizes :: [Int] -> [a] -> ([[a]], [a])
 splitBySizes sizes d = foldl f ([], d) sizes
