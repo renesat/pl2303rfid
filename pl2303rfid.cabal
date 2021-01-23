@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           pl2303
+name:           pl2303rfid
 version:        0.1.0.0
 category:       Hardware
 homepage:       https://github.com/renesat/pl2303
@@ -19,10 +19,10 @@ extra-source-files:
 
 library
   exposed-modules:
-      System.Hardware.PL2303
-      System.Hardware.PL2303.Cli
+      System.Hardware.PL2303Rfid
+      System.Hardware.PL2303Rfid.Cli
   other-modules:
-      Paths_pl2303
+      Paths_pl2303rfid
   hs-source-dirs:
       src
   ghc-options: -Wall
