@@ -185,14 +185,6 @@ encodeRequest req = reqHead <> reqLength <> reqCommand <> reqData <> reqChecksum
     reqLength = encodeLength dataLength
     reqChecksum = B.singleton . chr $ dataChecksum (reqCommand <> reqData)
 
-splitBySizes :: [Int] -> [a] -> ([[a]], [a])
-splitBySizes sizes d = foldl f ([], d) sizes
-  where
-    f = \s size -> let (res, currentTail) = s
-                       (prev, next) = splitAt size currentTail
-                   in (res ++ [prev], next)
-
-
 requestParser :: Parser Request
 requestParser = do
   (string $ encodeCode [170, 221]) <?> "Not correct start code (0xAA 0xDD)"
