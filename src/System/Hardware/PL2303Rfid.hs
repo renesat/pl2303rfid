@@ -7,17 +7,24 @@ Maintainer  : smol.ivan97@gmail.com
 Stability   : experimental
 -}
 module System.Hardware.PL2303Rfid
-  ( Command(..)
+  ( -- * PL2303Rfid types
+    -- ** Command
+    Command(..)
   , encodeCommand
   , decodeCommand
+    -- ** Status
   , Status(..)
   , encodeStatus
   , decodeStatus
+    -- ** Request
   , Request(..)
   , encodeRequest
+  , decodeRequest
+    -- ** Response
+  , Response(..)
+    -- ** Support function
   , dataChecksum
   , encodeLength
-  , Response(..)
   ) where
 
 import qualified Data.ByteString.Char8 as B
@@ -28,9 +35,11 @@ import           System.Hardware.Serialport()
 import           Data.Bits (xor, shiftL, shiftR)
 -- import           Data.Hex (hex)
 
+-- | Conver ByteString to list of bytes
 encodeCode :: [Int] -> B.ByteString
 encodeCode = B.pack . map chr
 
+-- | Conver list of bytes to ByteString
 decodeCode :: B.ByteString -> [Int]
 decodeCode = map ord . B.unpack
 
