@@ -21,6 +21,7 @@ module System.Hardware.PL2303Rfid
   ) where
 
 import qualified Data.ByteString.Char8 as B
+import           Data.Attoparsec.ByteString.Char8 as AP
 import           Data.Char (chr, ord)
 import           System.Hardware.Serialport()
 -- import           Numeric (readHex)
@@ -181,27 +182,21 @@ splitBySizes sizes d = foldl f ([], d) sizes
                    in (res ++ [prev], next)
 
 
+requestParser :: Parser Request
+requestParser = do
+  _startcode <- string $ encodeCode [170, 221]
+
+  reqLength <- return . decodeLength =<< AP.take 2
+  reqCommand <- return . decodeCommand =<< AP.take 2
+  reqBody <- AP.take (reqLength - 3)
+
+  realChecksum <- return $ chr $ dataChecksum (encodeCommand reqCommand <> reqBody)
+  checksum <- char realChecksum
+
+  return $ Request reqCommand reqBody
+
 decodeRequest :: B.ByteString -> Either String Request
-decodeRequest bs
-  | checksum /= dataChecksum (encodeCode reqCommand <> encodeCode reqBody) = Left "Not correct checksum"
-  | otherwise = Right $ Request (decodeCommand $ encodeCode reqCommand) (encodeCode reqBody)
-  where
-    ((_reqHead:reqLengthCode:[]), allData) = splitBySizes [2, 2] $ decodeCode bs
-    reqLength = decodeLength reqLengthCode
-    ((reqCommand:reqBody:[]), (checksum:[])) = splitBySizes [2, reqLength - 3] allData
-
-
-
-
-
--- createRequest :: Command -> B.ByteString -> B.ByteString
--- createRequest command d = reqHead <> reqLength <> reqData <> reqChecksum
---   where
---     reqHead =  hexSeqToByteString ["AA", "DD"]
---     reqData = (commandCode command) <> d
---     dataLength = (B.length d) + 3
---     reqLength = formatDataLength (dataLength)
---     reqChecksum = B.singleton . chr $ dataChecksum reqData
+decodeRequest = parseOnly requestParser
 
 
 -- sendRequest :: SerialPort -> Command -> B.ByteString -> IO Int
