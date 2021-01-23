@@ -31,9 +31,7 @@ import qualified Data.ByteString.Char8 as B
 import           Data.Attoparsec.ByteString.Char8 as AP
 import           Data.Char (chr, ord)
 import           System.Hardware.Serialport()
--- import           Numeric (readHex)
 import           Data.Bits (xor, shiftL, shiftR)
--- import           Data.Hex (hex)
 
 -- | Conver ByteString to list of bytes
 encodeCode :: [Int] -> B.ByteString
@@ -152,9 +150,6 @@ data Response = Response
   , responseBody :: B.ByteString
   }
   deriving (Read, Show, Eq)
-
--- hexSeqToByteString :: [String] -> B.ByteString
--- hexSeqToByteString = B.pack . map (chr . fst . head . readHex)
 
 {-Requests must contain the checksum. Checksum is the xor of all bytes of data.
 -}
