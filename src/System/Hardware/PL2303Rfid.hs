@@ -72,19 +72,21 @@ encodeCommand command = encodeCode code
       Write2   -> [2, 12] -- 0x020C
       Write3   -> [3, 12] -- 0x030C
 
- -- | Convert command to bytestring
-decodeCommand :: B.ByteString -> Command
-decodeCommand bs = command
-  where
-    code = decodeCode bs
-    command = case code of
-      [1,  2] -> Info -- 0x0102
-      [1,  3] -> Beep -- 0x0103
-      [1,  4] -> LedColor -- 0x0104
-      [1, 12] -> Read -- 0x010C
-      [2, 12] -> Write2 -- 0x020C
-      [3, 12] -> Write3 -- 0x030C
+commandParser :: Parser Command
+commandParser = do
+  code <- return . decodeCode =<< AP.take 2
+  case code of
+    [1,  2]   -> return Info     -- 0x0102
+    [1,  3]   -> return Beep     -- 0x0103
+    [1,  4]   -> return LedColor -- 0x0104
+    [1, 12]   -> return Read     -- 0x010C
+    [2, 12]   -> return Write2   -- 0x020C
+    [3, 12]   -> return Write3   -- 0x030C
+    otherwise -> fail "Not correct command code"
 
+-- | Convert bytestring to command
+decodeCommand :: B.ByteString -> Either String Command
+decodeCommand = parseOnly commandParser
 
 {-|
   Response status type
