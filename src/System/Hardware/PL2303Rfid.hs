@@ -195,14 +195,14 @@ splitBySizes sizes d = foldl f ([], d) sizes
 
 requestParser :: Parser Request
 requestParser = do
-  _startcode <- string $ encodeCode [170, 221]
+  (string $ encodeCode [170, 221]) <?> "Not correct start code (0xAA 0xDD)"
 
   reqLength <- return . decodeLength =<< AP.take 2
-  reqCommand <- return . decodeCommand =<< AP.take 2
+  reqCommand <- commandParser
   reqBody <- AP.take (reqLength - 3)
 
   realChecksum <- return $ chr $ dataChecksum (encodeCommand reqCommand <> reqBody)
-  checksum <- char realChecksum
+  checksum <- char realChecksum <?> "Not correct checksum"
 
   return $ Request reqCommand reqBody
 
