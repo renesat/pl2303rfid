@@ -158,8 +158,10 @@ encodeLength l = encodeCode [byte1, byte2]
     byte1 = shiftR l 8
     byte2 = xor (shiftL byte1 8) l
 
-decodeLength :: [Int] -> Int
-decodeLength (byte1:byte2:[]) = byte1 * 256 + byte2
+decodeLength :: B.ByteString -> Int
+decodeLength l = byte1 * 256 + byte2
+  where
+    (byte1:byte2:[]) = decodeCode l
 
 encodeRequest :: Request -> B.ByteString
 encodeRequest req = reqHead <> reqLength <> reqCommand <> reqData <> reqChecksum
