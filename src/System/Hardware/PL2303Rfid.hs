@@ -16,6 +16,10 @@ module System.Hardware.PL2303Rfid
   , Status(..)
   , encodeStatus
   , decodeStatus
+    -- ** Color
+  , Color(..)
+  , encodeColor
+  , decodeColor
     -- ** Request
   , Request(..)
   , encodeRequest
@@ -139,6 +143,50 @@ statusParser = do
 
 decodeStatus :: B.ByteString -> Either String Status
 decodeStatus = parseOnly statusParser
+
+--------------
+-- LedColor --
+--------------
+
+{-|
+  Color for LedColor command.
+
+  Status conformity:
+
+  * 'Ok' -> 0x00
+
+  * 'Error' -> 0x01
+
+  * 'ReadError1' -> 0x02
+
+  * 'ReadError2' -> 0x03
+-}
+data Color
+  = RedColor
+  | GreenColor
+  | NoneColor
+  deriving (Read, Show, Eq)
+
+
+encodeColor :: Color -> B.ByteString
+encodeColor color = B.singleton $ chr code
+  where
+    code = case color of
+      NoneColor  -> 0 -- 0x00
+      RedColor   -> 1 -- 0x01
+      GreenColor -> 2 -- 0x02
+
+colorParser :: Parser Color
+colorParser = do
+  code <- return . ord =<< anyChar
+  case code of
+    0 -> return NoneColor  -- 0x0102
+    1 -> return RedColor   -- 0x0103
+    2 -> return GreenColor -- 0x0104
+    _ -> fail "Not correct color code"
+
+decodeColor :: B.ByteString -> Either String Color
+decodeColor = parseOnly colorParser
 
 -------------
 -- Request --
