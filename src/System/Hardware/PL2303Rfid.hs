@@ -22,6 +22,8 @@ module System.Hardware.PL2303Rfid
   , decodeRequest
     -- ** Response
   , Response(..)
+  , encodeResponse
+  , decodeResponse
     -- ** Support function
   , dataChecksum
   , encodeLength
