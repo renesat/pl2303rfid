@@ -24,9 +24,10 @@ module System.Hardware.PL2303Rfid
   , Response(..)
   , encodeResponse
   , decodeResponse
-    -- ** Support function
+    -- * Support functions
   , dataChecksum
   , encodeLength
+  , decodeLength
     -- * Serial port command
   , sendRequest
   , recvResponse
@@ -38,13 +39,9 @@ import           Data.Char (chr, ord)
 import           System.Hardware.Serialport
 import           Data.Bits (xor, shiftL, shiftR)
 
--- | Conver ByteString to list of bytes
-encodeCode :: [Int] -> B.ByteString
-encodeCode = B.pack . map chr
-
--- | Conver list of bytes to ByteString
-decodeCode :: B.ByteString -> [Int]
-decodeCode = map ord . B.unpack
+-------------
+-- Command --
+-------------
 
 {-|
   Supported commands.
@@ -100,17 +97,17 @@ commandParser = do
 decodeCommand :: B.ByteString -> Either String Command
 decodeCommand = parseOnly commandParser
 
+
+------------
+-- Status --
+------------
+
 {-|
   Response status type
-
   Status conformity:
-
   * 'Ok' -> 0x00
-
   * 'Error' -> 0x01
-
   * 'ReadError1' -> 0x02
-
   * 'ReadError2' -> 0x03
 -}
 data Status
@@ -143,39 +140,16 @@ statusParser = do
 decodeStatus :: B.ByteString -> Either String Status
 decodeStatus = parseOnly statusParser
 
+-------------
+-- Request --
+-------------
+
 -- | Request type
 data Request = Request
   { requestCommand :: Command
   , requestBody :: B.ByteString
   }
   deriving (Read, Show, Eq)
-
--- | Response type
-data Response = Response
-  { responseCommand :: Command
-  , responseStatus :: Status
-  , responseBody :: B.ByteString
-  }
-  deriving (Read, Show, Eq)
-
-{-Requests must contain the checksum. Checksum is the xor of all bytes of data.
--}
-dataChecksum :: B.ByteString -> Int
-dataChecksum s = checksum
-  where
-    bytes = decodeCode s
-    checksum = foldr (xor) 0 bytes
-
-encodeLength :: Int -> B.ByteString
-encodeLength l = encodeCode [byte1, byte2]
-  where
-    byte1 = shiftR l 8
-    byte2 = xor (shiftL byte1 8) l
-
-decodeLength :: B.ByteString -> Int
-decodeLength l = byte1 * 256 + byte2
-  where
-    (byte1:byte2:[]) = decodeCode l
 
 encodeRequest :: Request -> B.ByteString
 encodeRequest req = reqHead <> reqLength <> reqCommand <> reqData <> reqChecksum
@@ -202,6 +176,18 @@ requestParser = do
 
 decodeRequest :: B.ByteString -> Either String Request
 decodeRequest = parseOnly requestParser
+
+--------------
+-- Response --
+--------------
+
+-- | Response type
+data Response = Response
+  { responseCommand :: Command
+  , responseStatus :: Status
+  , responseBody :: B.ByteString
+  }
+  deriving (Read, Show, Eq)
 
 encodeResponse :: Response -> B.ByteString
 encodeResponse resp = respHead <> respLength <> respCommand <> respStatus <> respData <> respChecksum
@@ -234,6 +220,9 @@ responseParser = do
 decodeResponse :: B.ByteString -> Either String Response
 decodeResponse = parseOnly responseParser
 
+---------------------
+-- Core IO methods --
+---------------------
 
 sendRequest :: SerialPort -> Request -> IO Int
 sendRequest sp req = send sp $ encodeRequest req
@@ -257,3 +246,43 @@ recvResponse sp = do
   body <- recvResponseBody sp len ""
 
   return $ decodeResponse (head1 <> head2 <> len1 <> len2 <> body)
+
+-----------------------
+-- Support functions --
+-----------------------
+
+{-Requests must contain the checksum. Checksum is the xor of all bytes of data.
+-}
+dataChecksum :: B.ByteString -> Int
+dataChecksum s = checksum
+  where
+    bytes = decodeCode s
+    checksum = foldr (xor) 0 bytes
+
+{-Encode int to ByteString with len 2
+-}
+encodeLength :: Int -> B.ByteString
+encodeLength l = encodeCode [byte1, byte2]
+  where
+    byte1 = shiftR l 8
+    byte2 = xor (shiftL byte1 8) l
+
+{-Convert ByteString with length 2 to int
+-}
+decodeLength :: B.ByteString -> Int
+decodeLength l = byte1 * 256 + byte2
+  where
+    (byte1:byte2:[]) = decodeCode l
+
+
+-------------------
+-- Commonn utils --
+-------------------
+
+-- | Conver ByteString to list of bytes
+encodeCode :: [Int] -> B.ByteString
+encodeCode = B.pack . map chr
+
+-- | Conver list of bytes to ByteString
+decodeCode :: B.ByteString -> [Int]
+decodeCode = map ord . B.unpack
