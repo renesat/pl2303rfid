@@ -27,12 +27,15 @@ module System.Hardware.PL2303Rfid
     -- ** Support function
   , dataChecksum
   , encodeLength
+    -- * Serial port command
+  , sendRequest
+  , recvResponse
   ) where
 
 import qualified Data.ByteString.Char8 as B
 import           Data.Attoparsec.ByteString.Char8 as AP
 import           Data.Char (chr, ord)
-import           System.Hardware.Serialport()
+import           System.Hardware.Serialport
 import           Data.Bits (xor, shiftL, shiftR)
 
 -- | Conver ByteString to list of bytes
@@ -232,52 +235,25 @@ decodeResponse :: B.ByteString -> Either String Response
 decodeResponse = parseOnly responseParser
 
 
--- sendRequest :: SerialPort -> Command -> B.ByteString -> IO Int
--- sendRequest s c d = send s request
---   where
---     request = createRequest c d
+sendRequest :: SerialPort -> Request -> IO Int
+sendRequest sp req = send sp $ encodeRequest req
 
+recvResponseBody :: SerialPort -> Int -> B.ByteString -> IO B.ByteString
+recvResponseBody _ 0 b = return b
+recvResponseBody sp i b = do
+  byte <- recv sp 1
+  recvResponseBody sp (i-1) (b <> byte)
 
--- formatResponseLength :: B.ByteString -> B.ByteString -> Int
--- formatResponseLength sbite1 sbite2 = l
---   where
---     bite1 = ord . head $ B.unpack sbite1
---     bite2 = ord . head $ B.unpack sbite2
---     l = (shiftL bite1 8) + bite2
+recvResponse :: SerialPort -> IO (Either String Response)
+recvResponse sp = do
+  -- TODO: rewrite this
+  head1 <- recv sp 1 -- 0xAA
+  head2 <- recv sp 1 -- 0xDD
 
+  len1 <- recv sp 1
+  len2 <- recv sp 1
+  len <- return $ decodeLength (len1 <> len2)
 
--- readResponseData :: SerialPort -> Int -> IO B.ByteString
--- readResponseData s l = readResponseData' s l (B.pack "")
+  body <- recvResponseBody sp len ""
 
--- readResponseData' :: SerialPort -> Int -> B.ByteString -> IO Response
--- readResponseData' _ 0 d = return d
--- readResponseData' s l d = do
---   item <- recv s 1
---   readResponseData' s (l - 1) (d <> item)
-
--- readResponse :: SerialPort -> IO B.ByteString
--- readResponse s = do
-
---   -- Read control symbol
---   recv s 1 -- 0xAA
---   recv s 1 -- 0xDD
-
---   -- Read length of data
---   lb1 <- recv s 1 -- first bite of length
---   lb2 <- recv s 1 -- second bite of length
---   l <- return $ (formatResponseLength l1 l2) - 4
-
---   -- Read Command
---   recv s 1
---   recv s 1
-
---   -- Read status
---   status <- recv s 1
-
---   respData <- readResponseData s length
---   -- print respData
---   respData <- return $ hex respData
---   respData <- return $ (B.pack $ take (length * 2 - B.length respData) $ repeat '0') <> respData
-
---   recv s 1 >>= print
---   return respData
+  return $ decodeResponse (head1 <> head2 <> len1 <> len2 <> body)
