@@ -230,9 +230,9 @@ colorParser :: Parser Color
 colorParser = do
   code <- return . ord =<< anyChar
   case code of
-    0 -> return NoneColor  -- 0x0102
-    1 -> return RedColor   -- 0x0103
-    2 -> return GreenColor -- 0x0104
+    0 -> return NoneColor  -- 0x00
+    1 -> return RedColor   -- 0x01
+    2 -> return GreenColor -- 0x02
     _ -> fail "Not correct color code"
 
 decodeColor :: B.ByteString -> Either String Color
