@@ -91,7 +91,7 @@ commandParser = do
     [1, 12]   -> return Read     -- 0x010C
     [2, 12]   -> return Write2   -- 0x020C
     [3, 12]   -> return Write3   -- 0x030C
-    otherwise -> fail "Not correct command code"
+    _         -> fail "Not correct command code"
 
 -- | Convert bytestring to command
 decodeCommand :: B.ByteString -> Either String Command
@@ -135,7 +135,7 @@ statusParser = do
     1 -> return Error      -- 0x0103
     2 -> return ReadError1 -- 0x0104
     3 -> return ReadError2 -- 0x010C
-    otherwise -> fail "Not correct status code"
+    _ -> fail "Not correct status code"
 
 decodeStatus :: B.ByteString -> Either String Status
 decodeStatus = parseOnly statusParser
