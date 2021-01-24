@@ -20,6 +20,10 @@ module System.Hardware.PL2303Rfid
   , Color(..)
   , encodeColor
   , decodeColor
+    -- ** WriteLock
+  , WriteLock(..)
+  , encodeWriteLock
+  , decodeWriteLock
     -- ** Request
   , Request(..)
   , encodeRequest
@@ -144,6 +148,44 @@ statusParser = do
 decodeStatus :: B.ByteString -> Either String Status
 decodeStatus = parseOnly statusParser
 
+---------------
+-- WriteLock --
+---------------
+
+{-|
+  Type for lock or not lock token after
+  write.
+
+  WriteLock conformity:
+
+  * 'DefaultLock' -> 0x00
+
+  * 'Lock' -> 0x01
+
+-}
+data WriteLock
+  = DefultLock
+  | Lock
+  deriving (Read, Show, Eq)
+
+
+encodeWriteLock :: WriteLock -> B.ByteString
+encodeWriteLock lock = B.singleton $ chr code
+  where
+    code = case lock of
+      DefultLock -> 0 -- 0x00
+      Lock       -> 1 -- 0x01
+
+writeLockParser :: Parser WriteLock
+writeLockParser = do
+  code <- return . ord =<< anyChar
+  case code of
+    0 -> return DefultLock -- 0x00
+    1 -> return Lock       -- 0x01
+    _ -> fail "Not correct lock code"
+
+decodeWriteLock :: B.ByteString -> Either String WriteLock
+decodeWriteLock = parseOnly writeLockParser
 
 --------------
 -- LedColor --
