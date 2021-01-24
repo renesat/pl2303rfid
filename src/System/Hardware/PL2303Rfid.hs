@@ -36,9 +36,17 @@ module System.Hardware.PL2303Rfid
   , dataChecksum
   , encodeLength
   , decodeLength
-    -- * Serial port command
+    -- * IO
+    -- ** IO core
   , sendRequest
   , recvResponse
+    -- ** IO Uitls
+  , doInfo
+  , doBeep
+  , doLedColor
+  , doRead
+  , doWrite2
+  , doWrite3
   ) where
 
 import qualified Data.ByteString.Char8 as B
@@ -336,6 +344,34 @@ recvResponse sp = do
   body <- recvResponseBody sp len ""
 
   return $ decodeResponse (head1 <> head2 <> len1 <> len2 <> body)
+
+--------------
+-- IO utils --
+--------------
+
+doCommand :: Command -> B.ByteString -> SerialPort -> IO (Either String Response)
+doCommand command body sp = do
+  req <- return $ Request command body
+  _ <- sendRequest sp req
+  recvResponse sp
+
+doInfo :: SerialPort -> IO (Either String Response)
+doInfo = doCommand Info ""
+
+doBeep :: Char -> SerialPort -> IO (Either String Response)
+doBeep beepLength = doCommand Beep (B.singleton beepLength)
+
+doLedColor :: Color -> SerialPort -> IO (Either String Response)
+doLedColor color = doCommand LedColor (encodeColor color)
+
+doRead :: SerialPort -> IO (Either String Response)
+doRead = doCommand Read ""
+
+doWrite2 :: WriteLock -> B.ByteString -> SerialPort -> IO (Either String Response)
+doWrite2 lock token = doCommand Write2 (encodeWriteLock lock <> token)
+
+doWrite3 :: WriteLock -> B.ByteString -> SerialPort -> IO (Either String Response)
+doWrite3 lock token = doCommand Write3 (encodeWriteLock lock <> token)
 
 -----------------------
 -- Support functions --
