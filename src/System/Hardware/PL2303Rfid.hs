@@ -144,6 +144,7 @@ statusParser = do
 decodeStatus :: B.ByteString -> Either String Status
 decodeStatus = parseOnly statusParser
 
+
 --------------
 -- LedColor --
 --------------
@@ -151,15 +152,14 @@ decodeStatus = parseOnly statusParser
 {-|
   Color for LedColor command.
 
-  Status conformity:
+  Color conformity:
 
-  * 'Ok' -> 0x00
+  * 'NoneColor' -> 0x00
 
-  * 'Error' -> 0x01
+  * 'RedColor' -> 0x01
 
-  * 'ReadError1' -> 0x02
+  * 'GreenColor' -> 0x02
 
-  * 'ReadError2' -> 0x03
 -}
 data Color
   = RedColor
