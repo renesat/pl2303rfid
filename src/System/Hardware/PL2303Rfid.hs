@@ -367,9 +367,11 @@ doLedColor color = doCommand LedColor (encodeColor color)
 doRead :: SerialPort -> IO (Either String Response)
 doRead = doCommand Read ""
 
+-- TODO: add token type
 doWrite2 :: WriteLock -> B.ByteString -> SerialPort -> IO (Either String Response)
 doWrite2 lock token = doCommand Write2 (encodeWriteLock lock <> token)
 
+-- TODO: add token type
 doWrite3 :: WriteLock -> B.ByteString -> SerialPort -> IO (Either String Response)
 doWrite3 lock token = doCommand Write3 (encodeWriteLock lock <> token)
 
