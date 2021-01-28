@@ -17,9 +17,17 @@ dependencies:
   - bytestring
   - hex
   - attoparsec == 0.13.*
+  - optparse-applicative == 0.16.*
 
 
 ghc-options: -Wall
 
 library:
   source-dirs:      src
+
+executables:
+  pl2303rfid-cli:
+    main: Main.hs
+    source-dirs: app/
+    dependencies:
+      pl2303rfid
