@@ -24,14 +24,23 @@ data CommandArgs
               }
   deriving (Read, Show, Eq)
 
+writeLockParser :: Parser Core.WriteLock
+writeLockParser = getLock <$> lockSwitch
+  where
+    lockSwitch = switch
+                 ( long "lock"
+                <> short 'l'
+                <> help "Lock after write.")
+    getLock = \x -> if x then
+                      Core.Lock
+                    else
+                      Core.DefultLock
+
 
 writeParser :: Parser CommandArgs
 writeParser = WriteArgs
-  <$> (B.pack <$> argument str (metavar "TOKEN" <> help "Retain all intermediate temporary files"))
-  <*> ((\x -> if x then Core.Lock else Core.DefultLock) <$> switch -- TODO: rewrite
-      ( long "lock"
-     <> short 'l'
-     <> help "Lock after write."))
+  <$> (B.pack <$> argument str (metavar "TOKEN" <> help "Token in hex fomat. Length 5 byte."))
+  <*> writeLockParser
 
 commandParser :: Parser CommandArgs
 commandParser = subparser
