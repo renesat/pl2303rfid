@@ -27,7 +27,7 @@ import           Options.Applicative.Types (OptProperties(..))
 import           Options.Applicative.Builder.Internal (optionMod)
 import           Options.Applicative.Help.Pretty (text, (<+>))
 
-import qualified System.Hardware.PL2303Rfid as Core
+import qualified System.Hardware.PL2303Rfid.Core as Core
 
 -- Types
 
