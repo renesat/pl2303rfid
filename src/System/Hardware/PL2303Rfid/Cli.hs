@@ -43,15 +43,15 @@ writeParser = WriteArgs
   <*> writeLockParser
 
 commandParser :: Parser CommandArgs
-commandParser = subparser
+commandParser = hsubparser
   (  command "info" (info
-                     ((pure InfoArgs) <**> helper)
+                     (pure InfoArgs)
                      (progDesc "Get info from device"))
   <> command "read" (info
-                     ((pure ReadArgs) <**> helper)
+                     (pure ReadArgs)
                      (progDesc "Read token"))
   <> command "write" (info
-                      (writeParser <**> helper)
+                      writeParser
                        ( fullDesc
                       <> progDesc "Write token"))
   )
