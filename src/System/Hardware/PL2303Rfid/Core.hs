@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-|
-Module      : System.Hardware.PL2303Rfid
+Module      : System.Hardware.PL2303Rfid.Core
 Copyright   : (c) Smolyakov Ivan, 2021
 License     : MIT
 Maintainer  : smol.ivan97@gmail.com
 Stability   : experimental
 -}
-module System.Hardware.PL2303Rfid
+module System.Hardware.PL2303Rfid.Core
   ( -- * PL2303Rfid types
     -- ** Command
     Command(..)
@@ -32,6 +32,12 @@ module System.Hardware.PL2303Rfid
   , Response(..)
   , encodeResponse
   , decodeResponse
+    -- ** Token
+  , Token
+  , toToken
+  , fromToken
+  , toHex
+  , fromHex
     -- * Support functions
   , dataChecksum
   , encodeLength
@@ -54,6 +60,41 @@ import           Data.Attoparsec.ByteString.Char8 as AP
 import           Data.Char (chr, ord)
 import           System.Hardware.Serialport
 import           Data.Bits (xor, shiftL, shiftR)
+import           Data.Hex (hex, unhex)
+
+-----------
+-- Token --
+-----------
+
+-- | Token type. Must have a length of 5.
+data Token
+  = Token {-# UNPACK #-} !B.ByteString
+  deriving (Read, Show, Eq)
+
+-- | Create Token from bytestring.
+toToken :: B.ByteString -> Either String Token
+toToken s = if l == 5 then
+              Right $ Token s
+            else
+              Left "Length is not 5 byte"
+  where
+    l = B.length s
+
+-- | Token to bytestring.
+fromToken :: Token -> B.ByteString
+fromToken (Token s) = s
+
+-- | Convert token to hex string.
+toHex :: Token -> String
+toHex = B.unpack . hex . fromToken
+
+-- | Convert hex string to Token.
+fromHex :: String -> Either String Token
+fromHex hs = case eitherString of
+                Left er -> Left er
+                Right s -> toToken s
+  where
+    eitherString = unhex $ B.pack hs
 
 -------------
 -- Command --
@@ -349,31 +390,47 @@ recvResponse sp = do
 -- IO utils --
 --------------
 
-doCommand :: Command -> B.ByteString -> SerialPort -> IO (Either String Response)
+doCommand :: Command -> B.ByteString -> SerialPort -> IO Response
 doCommand command body sp = do
   req <- return $ Request command body
   _ <- sendRequest sp req
-  recvResponse sp
+  eithResp <- recvResponse sp
+  case eithResp of
+    Left er    -> error er
+    Right resp -> return resp
 
-doInfo :: SerialPort -> IO (Either String Response)
-doInfo = doCommand Info ""
+doInfo :: SerialPort -> IO B.ByteString
+doInfo sp = return . responseBody =<< doCommand Info "" sp
 
-doBeep :: Char -> SerialPort -> IO (Either String Response)
-doBeep beepLength = doCommand Beep (B.singleton beepLength)
+doBeep :: Char -> SerialPort -> IO ()
+doBeep beepLength sp = do
+  _resp <- doCommand Beep (B.singleton beepLength) sp
+  return ()
 
-doLedColor :: Color -> SerialPort -> IO (Either String Response)
-doLedColor color = doCommand LedColor (encodeColor color)
+doLedColor :: Color -> SerialPort -> IO ()
+doLedColor color  sp = do
+  _resp <- doCommand LedColor (encodeColor color) sp
+  return ()
 
-doRead :: SerialPort -> IO (Either String Response)
-doRead = doCommand Read ""
+doRead :: SerialPort -> IO Token
+doRead sp = do
+  resp <- doCommand Read "" sp
+  eithToken <- return $ toToken $ responseBody resp
+  case eithToken of
+    Left er     -> error er
+    Right token -> return token
 
 -- TODO: add token type
-doWrite2 :: WriteLock -> B.ByteString -> SerialPort -> IO (Either String Response)
-doWrite2 lock token = doCommand Write2 (encodeWriteLock lock <> token)
+doWrite2 :: WriteLock -> Token -> SerialPort -> IO ()
+doWrite2 lock token sp = do
+  _resp <- doCommand Write2 (encodeWriteLock lock <> fromToken token) sp
+  return ()
 
 -- TODO: add token type
-doWrite3 :: WriteLock -> B.ByteString -> SerialPort -> IO (Either String Response)
-doWrite3 lock token = doCommand Write3 (encodeWriteLock lock <> token)
+doWrite3 :: WriteLock -> Token -> SerialPort -> IO ()
+doWrite3 lock token sp = do
+  _resp <- doCommand Write3 (encodeWriteLock lock <> fromToken token) sp
+  return ()
 
 -----------------------
 -- Support functions --

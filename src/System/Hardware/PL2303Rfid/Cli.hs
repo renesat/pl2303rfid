@@ -5,7 +5,7 @@ module System.Hardware.PL2303Rfid.Cli where
 import           Options.Applicative
 import qualified Data.ByteString.Char8 as B
 
-import qualified System.Hardware.PL2303Rfid as Core
+import qualified System.Hardware.PL2303Rfid.Core as Core
 
 data CliArgs
   = CliArgs { cliCommand :: CommandArgs
