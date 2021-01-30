@@ -26,7 +26,7 @@ library:
   source-dirs:      src
 
 executables:
-  pl2303rfid-cli:
+  pl2303rfid:
     main: Main.hs
     source-dirs: app/
     dependencies:
