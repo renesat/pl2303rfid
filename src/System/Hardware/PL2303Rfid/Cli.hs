@@ -5,7 +5,20 @@ License     : MIT
 Maintainer  : smol.ivan97@gmail.com
 Stability   : experimental
 -}
-module System.Hardware.PL2303Rfid.Cli where
+module System.Hardware.PL2303Rfid.Cli
+  ( -- * Types
+    CliArgs(..)
+  , CommandArgs(..)
+    -- * Parsers
+  , cliParser
+  , commandParser
+  , writeLockParser
+  , tokenParser
+  , writeTypeParser
+  , writeParser
+    -- * Main
+  , main
+  ) where
 
 import           Options.Applicative
 import qualified Data.ByteString.Char8 as B
@@ -16,6 +29,9 @@ import           Options.Applicative.Help.Pretty (text, (<+>))
 
 import qualified System.Hardware.PL2303Rfid as Core
 
+-- Types
+
+-- | Main type for all cli arguments
 data CliArgs
   = CliArgs { cliCommand :: CommandArgs
             , cliDevice :: String
@@ -23,6 +39,7 @@ data CliArgs
             }
   deriving (Read, Show, Eq)
 
+-- | Type for command arguments
 data CommandArgs
   = InfoArgs
   | ReadArgs
@@ -31,6 +48,8 @@ data CommandArgs
               , writeType :: Core.Command
               }
   deriving (Read, Show, Eq)
+
+-- | Parsers
 
 -- | Write lock parser.
 writeLockParser :: Parser Core.WriteLock
@@ -49,6 +68,7 @@ tokenParser = B.pack <$> parser desc
           <> help "Token in hex fomat. Length 5 byte.")
     parser = argument str
 
+-- | Write type parser.
 writeTypeParser :: Parser Core.Command
 writeTypeParser = enumOption ["write2"    , "write3"   ]
                              [Core.Write2 , Core.Write3]
@@ -60,13 +80,14 @@ writeTypeParser = enumOption ["write2"    , "write3"   ]
      <> help "write type."
       )
 
-
+-- | Write parser.
 writeParser :: Parser CommandArgs
 writeParser = WriteArgs
   <$> tokenParser
   <*> writeLockParser
   <*> writeTypeParser
 
+-- | Command parser.
 commandParser :: Parser CommandArgs
 commandParser = hsubparser
   (  command "info" (info
@@ -81,6 +102,7 @@ commandParser = hsubparser
                       <> progDesc "Write token"))
   )
 
+-- | Cli args parser.
 cliParser :: Parser CliArgs
 cliParser = CliArgs
   <$> commandParser
@@ -96,6 +118,8 @@ cliParser = CliArgs
      <> short 'b'
      <> help "Beep when start command." )
 
+-- Main
+
 greet :: CliArgs -> IO ()
 greet x = putStrLn $ show x
 
@@ -107,6 +131,7 @@ main = greet =<< execParser opts
      <> header "pl2303rfid - cli utils for PL2303 125khz rfid reader/writer" )
 
 -- Helpers
+
 enumReader :: [String] -> [a] -> String -> ReadM a
 enumReader items values item
   = case mIndex of
