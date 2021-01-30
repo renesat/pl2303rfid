@@ -66,10 +66,12 @@ import           Data.Hex (hex, unhex)
 -- Token --
 -----------
 
+-- | Token type. Must have a length of 5.
 data Token
   = Token {-# UNPACK #-} !B.ByteString
   deriving (Read, Show, Eq)
 
+-- | Create Token from bytestring.
 toToken :: B.ByteString -> Either String Token
 toToken s = if l == 5 then
               Right $ Token s
@@ -78,12 +80,15 @@ toToken s = if l == 5 then
   where
     l = B.length s
 
+-- | Token to bytestring.
 fromToken :: Token -> B.ByteString
 fromToken (Token s) = s
 
+-- | Convert token to hex string.
 toHex :: Token -> String
 toHex = B.unpack . hex . fromToken
 
+-- | Convert hex string to Token.
 fromHex :: String -> Either String Token
 fromHex hs = case eitherString of
                 Left er -> Left er
