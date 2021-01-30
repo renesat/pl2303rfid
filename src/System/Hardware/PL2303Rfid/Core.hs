@@ -385,31 +385,47 @@ recvResponse sp = do
 -- IO utils --
 --------------
 
-doCommand :: Command -> B.ByteString -> SerialPort -> IO (Either String Response)
+doCommand :: Command -> B.ByteString -> SerialPort -> IO Response
 doCommand command body sp = do
   req <- return $ Request command body
   _ <- sendRequest sp req
-  recvResponse sp
+  eithResp <- recvResponse sp
+  case eithResp of
+    Left er    -> error er
+    Right resp -> return resp
 
-doInfo :: SerialPort -> IO (Either String Response)
-doInfo = doCommand Info ""
+doInfo :: SerialPort -> IO B.ByteString
+doInfo sp = return . responseBody =<< doCommand Info "" sp
 
-doBeep :: Char -> SerialPort -> IO (Either String Response)
-doBeep beepLength = doCommand Beep (B.singleton beepLength)
+doBeep :: Char -> SerialPort -> IO ()
+doBeep beepLength sp = do
+  _resp <- doCommand Beep (B.singleton beepLength) sp
+  return ()
 
-doLedColor :: Color -> SerialPort -> IO (Either String Response)
-doLedColor color = doCommand LedColor (encodeColor color)
+doLedColor :: Color -> SerialPort -> IO ()
+doLedColor color  sp = do
+  _resp <- doCommand LedColor (encodeColor color) sp
+  return ()
 
-doRead :: SerialPort -> IO (Either String Response)
-doRead = doCommand Read ""
+doRead :: SerialPort -> IO Token
+doRead sp = do
+  resp <- doCommand Read "" sp
+  eithToken <- return $ toToken $ responseBody resp
+  case eithToken of
+    Left er     -> error er
+    Right token -> return token
 
 -- TODO: add token type
-doWrite2 :: WriteLock -> Token -> SerialPort -> IO (Either String Response)
-doWrite2 lock token = doCommand Write2 (encodeWriteLock lock <> fromToken token)
+doWrite2 :: WriteLock -> Token -> SerialPort -> IO ()
+doWrite2 lock token sp = do
+  _resp <- doCommand Write2 (encodeWriteLock lock <> fromToken token) sp
+  return ()
 
 -- TODO: add token type
-doWrite3 :: WriteLock -> Token -> SerialPort -> IO (Either String Response)
-doWrite3 lock token = doCommand Write3 (encodeWriteLock lock <> fromToken token)
+doWrite3 :: WriteLock -> Token -> SerialPort -> IO ()
+doWrite3 lock token sp = do
+  _resp <- doCommand Write3 (encodeWriteLock lock <> fromToken token) sp
+  return ()
 
 -----------------------
 -- Support functions --
