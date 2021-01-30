@@ -119,7 +119,9 @@ enumReader items values item
 
 enumOption :: [String] -> [a] -> Mod OptionFields a -> Parser a
 enumOption items values desc = option (str >>= enumReader items values)
-                                      (desc <> availableParamMod items)
+                                      ( desc
+                                     <> availableParamMod items
+                                     <> completeWith items)
 
 availableParamMod :: [String] -> Mod f a
 availableParamMod items = optionMod (\x -> x { propHelp = propHelp x >>= (\t -> return $ t <+> text l)
