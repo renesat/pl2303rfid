@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-|
-Module      : System.Hardware.PL2303Rfid
+Module      : System.Hardware.PL2303Rfid.Core
 Copyright   : (c) Smolyakov Ivan, 2021
 License     : MIT
 Maintainer  : smol.ivan97@gmail.com
 Stability   : experimental
 -}
-module System.Hardware.PL2303Rfid
+module System.Hardware.PL2303Rfid.Core
   ( -- * PL2303Rfid types
     -- ** Command
     Command(..)
@@ -54,6 +54,7 @@ import           Data.Attoparsec.ByteString.Char8 as AP
 import           Data.Char (chr, ord)
 import           System.Hardware.Serialport
 import           Data.Bits (xor, shiftL, shiftR)
+
 
 -------------
 -- Command --
