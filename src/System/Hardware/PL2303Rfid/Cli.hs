@@ -1,5 +1,10 @@
--- | 
-
+{-|
+Module      : System.Hardware.PL2303Rfid.Cli
+Copyright   : (c) Smolyakov Ivan, 2021
+License     : MIT
+Maintainer  : smol.ivan97@gmail.com
+Stability   : experimental
+-}
 module System.Hardware.PL2303Rfid.Cli where
 
 import           Options.Applicative
