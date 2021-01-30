@@ -32,6 +32,12 @@ module System.Hardware.PL2303Rfid.Core
   , Response(..)
   , encodeResponse
   , decodeResponse
+    -- ** Token
+  , Token
+  , toToken
+  , fromToken
+  , toHex
+  , fromHex
     -- * Support functions
   , dataChecksum
   , encodeLength
@@ -54,7 +60,36 @@ import           Data.Attoparsec.ByteString.Char8 as AP
 import           Data.Char (chr, ord)
 import           System.Hardware.Serialport
 import           Data.Bits (xor, shiftL, shiftR)
+import           Data.Hex (hex, unhex)
 
+-----------
+-- Token --
+-----------
+
+data Token
+  = Token {-# UNPACK #-} !B.ByteString
+  deriving (Read, Show, Eq)
+
+toToken :: B.ByteString -> Either String Token
+toToken s = if l == 5 then
+              Right $ Token s
+            else
+              Left "Length is not 5 byte"
+  where
+    l = B.length s
+
+fromToken :: Token -> B.ByteString
+fromToken (Token s) = s
+
+toHex :: Token -> String
+toHex = B.unpack . hex . fromToken
+
+fromHex :: String -> Either String Token
+fromHex hs = case eitherString of
+                Left er -> Left er
+                Right s -> toToken s
+  where
+    eitherString = unhex $ B.pack hs
 
 -------------
 -- Command --
@@ -369,12 +404,12 @@ doRead :: SerialPort -> IO (Either String Response)
 doRead = doCommand Read ""
 
 -- TODO: add token type
-doWrite2 :: WriteLock -> B.ByteString -> SerialPort -> IO (Either String Response)
-doWrite2 lock token = doCommand Write2 (encodeWriteLock lock <> token)
+doWrite2 :: WriteLock -> Token -> SerialPort -> IO (Either String Response)
+doWrite2 lock token = doCommand Write2 (encodeWriteLock lock <> fromToken token)
 
 -- TODO: add token type
-doWrite3 :: WriteLock -> B.ByteString -> SerialPort -> IO (Either String Response)
-doWrite3 lock token = doCommand Write3 (encodeWriteLock lock <> token)
+doWrite3 :: WriteLock -> Token -> SerialPort -> IO (Either String Response)
+doWrite3 lock token = doCommand Write3 (encodeWriteLock lock <> fromToken token)
 
 -----------------------
 -- Support functions --
