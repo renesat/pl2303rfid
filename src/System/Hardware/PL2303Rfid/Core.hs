@@ -76,7 +76,7 @@ toToken :: B.ByteString -> Either String Token
 toToken s = if l == 5 then
               Right $ Token s
             else
-              Left "Length is not 5 byte"
+              Left "Token length is not 5 byte"
   where
     l = B.length s
 

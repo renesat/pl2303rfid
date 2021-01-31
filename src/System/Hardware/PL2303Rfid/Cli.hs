@@ -21,7 +21,6 @@ module System.Hardware.PL2303Rfid.Cli
   ) where
 
 import           Options.Applicative
-import qualified Data.ByteString.Char8 as B
 import           Data.List (elemIndex)
 import           Options.Applicative.Types (OptProperties(..))
 import           Options.Applicative.Builder.Internal (optionMod)
@@ -43,7 +42,7 @@ data CliArgs
 data CommandArgs
   = InfoArgs
   | ReadArgs
-  | WriteArgs { token     :: B.ByteString
+  | WriteArgs { token     :: Core.Token
               , lock      :: Core.WriteLock
               , writeType :: Core.Command
               }
@@ -61,12 +60,22 @@ writeLockParser = parser desc
     parser = flag Core.DefultLock Core.Lock
 
 -- | Token parser.
-tokenParser :: Parser B.ByteString
-tokenParser = B.pack <$> parser desc
+tokenParser :: Parser Core.Token
+tokenParser = parser desc
   where
     desc = ( metavar "TOKEN"
-          <> help "Token in hex fomat. Length 5 byte.")
-    parser = argument str
+          <> help "Token in hex fomat. Length 5 byte (10 symbols).")
+    parser = argument tokenReader
+
+tokenReader :: ReadM Core.Token
+tokenReader = str >>= reader
+  where
+    returnToken = \x -> case x of
+                          Left er -> readerAbort $ ErrorMsg er
+                          Right t -> return t
+    reader = returnToken . Core.fromHex
+
+
 
 -- | Write type parser.
 writeTypeParser :: Parser Core.Command
