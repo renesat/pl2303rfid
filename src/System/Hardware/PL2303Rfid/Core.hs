@@ -420,13 +420,11 @@ doRead sp = do
     Left er     -> error er
     Right token -> return token
 
--- TODO: add token type
 doWrite2 :: WriteLock -> Token -> SerialPort -> IO ()
 doWrite2 lock token sp = do
   _resp <- doCommand Write2 (encodeWriteLock lock <> fromToken token) sp
   return ()
 
--- TODO: add token type
 doWrite3 :: WriteLock -> Token -> SerialPort -> IO ()
 doWrite3 lock token sp = do
   _resp <- doCommand Write3 (encodeWriteLock lock <> fromToken token) sp
