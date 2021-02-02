@@ -27,6 +27,7 @@ import           Data.List (elemIndex)
 import           Options.Applicative.Types (OptProperties(..))
 import           Options.Applicative.Builder.Internal (optionMod)
 import           Options.Applicative.Help.Pretty (text, (<+>))
+import           System.Hardware.Serialport(CommSpeed(..))
 
 import qualified System.Hardware.PL2303Rfid.Core as Core
 
@@ -37,6 +38,7 @@ data CliArgs
   = CliArgs { cliCommand :: CommandArgs
             , cliDevice :: String
             , cliBeep :: Bool
+            , cliCommSpeed :: CommSpeed
             }
   deriving (Read, Show, Eq)
 
@@ -130,12 +132,29 @@ beepParser = switch
   <> short 'b'
   <> help "Beep when start command." )
 
+-- | comm speed parser
+commSpeedParser :: Parser CommSpeed
+commSpeedParser = enumOption ["110", "300", "600", "1200", "2400",
+                              "4800", "9600", "19200", "38400", "57600",
+                              "115200"]
+                             [CS110, CS300, CS600, CS1200, CS2400,
+                              CS4800, CS9600, CS19200, CS38400, CS57600,
+                              CS115200]
+      ( long "comm-speed"
+     <> short 's'
+     <> metavar "COMM_SPEED"
+     <> showDefaultWith (\_ -> "38400")
+     <> value CS38400
+     <> help "serial port speed"
+      )
+
 -- | Cli args parser.
 cliParser :: Parser CliArgs
 cliParser = CliArgs
   <$> commandParser
   <*> deviceParser
   <*> beepParser
+  <*> commSpeedParser
 
 -- Main
 
