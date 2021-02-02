@@ -27,7 +27,7 @@ import           Data.List (elemIndex)
 import           Options.Applicative.Types (OptProperties(..))
 import           Options.Applicative.Builder.Internal (optionMod)
 import           Options.Applicative.Help.Pretty (text, (<+>))
-import           System.Hardware.Serialport(CommSpeed(..))
+import           System.Hardware.Serialport
 
 import qualified System.Hardware.PL2303Rfid.Core as Core
 
@@ -158,8 +158,31 @@ cliParser = CliArgs
 
 -- Main
 
+greetInfo :: SerialPort -> CommandArgs -> IO ()
+greetInfo s _ = do
+  infoData <- Core.doInfo s
+  putStrLn $ show infoData
+
+greetRead :: SerialPort -> CommandArgs -> IO ()
+greetRead s _ = do
+  t <- Core.doRead s
+  putStrLn $ Core.toHex t
+
+
 greet :: CliArgs -> IO ()
-greet x = putStrLn $ show x
+greet args = do
+  s <- openSerial (cliDevice args) defaultSerialSettings { commSpeed = cliCommSpeed args }
+  Core.doLedColor Core.RedColor s
+
+  commandArgs <- return $ cliCommand args
+  case commandArgs of
+    InfoArgs -> greetInfo s commandArgs
+    ReadArgs -> greetRead s commandArgs
+    _        -> putStrLn $ show args
+
+  Core.doLedColor Core.GreenColor s
+  closeSerial s
+
 
 main :: IO ()
 main = greet =<< execParser opts
