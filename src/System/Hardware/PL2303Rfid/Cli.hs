@@ -16,6 +16,8 @@ module System.Hardware.PL2303Rfid.Cli
   , tokenParser
   , writeTypeParser
   , writeParser
+  , deviceParser
+  , beepParser
     -- * Main
   , main
   ) where
@@ -111,21 +113,29 @@ commandParser = hsubparser
                       <> progDesc "Write token"))
   )
 
+-- | Device parser
+deviceParser :: Parser String
+deviceParser = strOption
+   ( long "device"
+  <> short 'd'
+  <> metavar "device"
+  <> showDefault
+  <> value "/dev/ttyUSB0"
+  <> help "Path to serial port device." )
+
+-- | Beep parser
+beepParser :: Parser Bool
+beepParser = switch
+   ( long "beep"
+  <> short 'b'
+  <> help "Beep when start command." )
+
 -- | Cli args parser.
 cliParser :: Parser CliArgs
 cliParser = CliArgs
   <$> commandParser
-  <*> strOption
-      ( long "device"
-     <> short 'd'
-     <> metavar "device"
-     <> showDefault
-     <> value "/dev/ttyUSB0"
-     <> help "Path to serial port device." )
-  <*> switch
-      ( long "beep"
-     <> short 'b'
-     <> help "Beep when start command." )
+  <*> deviceParser
+  <*> beepParser
 
 -- Main
 
