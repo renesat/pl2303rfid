@@ -51,6 +51,7 @@ module System.Hardware.PL2303Rfid.Core
   , doBeep
   , doLedColor
   , doRead
+  , doWrite
   , doWrite2
   , doWrite3
   ) where
@@ -61,6 +62,7 @@ import           Data.Char (chr, ord)
 import           System.Hardware.Serialport
 import           Data.Bits (xor, shiftL, shiftR)
 import           Data.Hex (hex, unhex)
+import           Control.Monad (when)
 
 -----------
 -- Token --
@@ -76,7 +78,7 @@ toToken :: B.ByteString -> Either String Token
 toToken s = if l == 5 then
               Right $ Token s
             else
-              Left "Length is not 5 byte"
+              Left "Token length is not 5 byte"
   where
     l = B.length s
 
@@ -375,8 +377,18 @@ recvResponseBody sp i b = do
 recvResponse :: SerialPort -> IO (Either String Response)
 recvResponse sp = do
   -- TODO: rewrite this
-  head1 <- recv sp 1 -- 0xAA
-  head2 <- recv sp 1 -- 0xDD
+  let waitHead = do
+        head1 <- recv sp 1 -- 0xAA
+        head2 <- if head1 == encodeCode [170] then
+                   recv sp 1
+                 else
+                   return ""
+        if head1 == encodeCode [170] && head2 == encodeCode [221] then
+          return (head1, head2)
+        else
+          waitHead
+
+  (head1, head2) <- waitHead
 
   len1 <- recv sp 1
   len2 <- recv sp 1
@@ -420,13 +432,24 @@ doRead sp = do
     Left er     -> error er
     Right token -> return token
 
--- TODO: add token type
+doWrite :: WriteLock -> Token -> SerialPort -> IO ()
+doWrite lock token sp = do
+  _ <- doWrite2 lock token sp
+  newToken <- doRead sp
+  when (newToken == newToken) $ return ()
+
+  _ <- doWrite3 lock token sp
+  newToken <- doRead sp
+  when (newToken == newToken) $ return ()
+
+  error "Readonly/not compatible token"
+
+
 doWrite2 :: WriteLock -> Token -> SerialPort -> IO ()
 doWrite2 lock token sp = do
   _resp <- doCommand Write2 (encodeWriteLock lock <> fromToken token) sp
   return ()
 
--- TODO: add token type
 doWrite3 :: WriteLock -> Token -> SerialPort -> IO ()
 doWrite3 lock token sp = do
   _resp <- doCommand Write3 (encodeWriteLock lock <> fromToken token) sp

@@ -35,7 +35,7 @@ library
     , serialport
   default-language: Haskell2010
 
-executable pl2303rfid-cli
+executable pl2303rfid
   main-is: Main.hs
   other-modules:
       Paths_pl2303rfid
