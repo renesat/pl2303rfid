@@ -51,6 +51,7 @@ module System.Hardware.PL2303Rfid.Core
   , doBeep
   , doLedColor
   , doRead
+  , doWrite
   , doWrite2
   , doWrite3
   ) where
@@ -430,6 +431,19 @@ doRead sp = do
   case eithToken of
     Left er     -> error er
     Right token -> return token
+
+doWrite :: WriteLock -> Token -> SerialPort -> IO ()
+doWrite lock token sp = do
+  _ <- doWrite2 lock token sp
+  newToken <- doRead sp
+  when (newToken == newToken) $ return ()
+
+  _ <- doWrite3 lock token sp
+  newToken <- doRead sp
+  when (newToken == newToken) $ return ()
+
+  error "Readonly/not compatible token"
+
 
 doWrite2 :: WriteLock -> Token -> SerialPort -> IO ()
 doWrite2 lock token sp = do
