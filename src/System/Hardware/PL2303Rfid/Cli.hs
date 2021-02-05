@@ -23,10 +23,10 @@ module System.Hardware.PL2303Rfid.Cli
   ) where
 
 import           Options.Applicative
-import           Data.List (elemIndex)
-import           Options.Applicative.Types (OptProperties(..))
+import           Options.Applicative.Types (OptProperties(..), Backtracking(..))
 import           Options.Applicative.Builder.Internal (optionMod)
 import           Options.Applicative.Help.Pretty (text, (<+>))
+import           Data.List (elemIndex)
 import           System.Hardware.Serialport
 
 import qualified System.Hardware.PL2303Rfid.Core as Core
@@ -48,9 +48,29 @@ data CommandArgs
   | ReadArgs
   | WriteArgs { token     :: Core.Token
               , lock      :: Core.WriteLock
-              , writeType :: Core.Command
+              , writeType :: WriteType
               }
   deriving (Read, Show, Eq)
+
+-- | Write type
+data WriteType
+  = Write
+  | Write2
+  | Write3
+  deriving (Read, Show, Eq)
+
+decodeWriteType :: String -> Either String WriteType
+decodeWriteType s = case s of
+                      "write"  -> Right Write
+                      "write2" -> Right Write2
+                      "write3" -> Right Write3
+                      _        -> Left "Not corect write type."
+
+encodeWriteType :: WriteType -> String
+encodeWriteType wt = case wt of
+                       Write  -> "write"
+                       Write2 -> "write2"
+                       Write3 -> "write3"
 
 -- | Parsers
 
@@ -79,19 +99,19 @@ tokenReader = str >>= reader
                           Right t -> return t
     reader = returnToken . Core.fromHex
 
-
-
 -- | Write type parser.
-writeTypeParser :: Parser Core.Command
-writeTypeParser = enumOption ["write2"    , "write3"   ]
-                             [Core.Write2 , Core.Write3]
+writeTypeParser :: Parser WriteType
+writeTypeParser = enumOption (map encodeWriteType values)
+                             values
       ( long "type"
      <> short 't'
      <> metavar "WRITE_TYPE"
-     <> showDefaultWith (\_ -> "write2")
-     <> value Core.Write2
+     <> showDefaultWith encodeWriteType
+     <> value Write
      <> help "write type."
       )
+  where
+    values = [Write, Write2, Write3]
 
 -- | Write parser.
 writeParser :: Parser CommandArgs
@@ -121,6 +141,7 @@ deviceParser = strOption
    ( long "device"
   <> short 'd'
   <> metavar "device"
+  <> action "file"
   <> showDefault
   <> value "/dev/ttyUSB0"
   <> help "Path to serial port device." )
@@ -156,7 +177,7 @@ cliParser = CliArgs
   <*> beepParser
   <*> commSpeedParser
 
--- Main
+-- Greeters
 
 greetInfo :: SerialPort -> CommandArgs -> IO ()
 greetInfo s _ = do
@@ -168,6 +189,16 @@ greetRead s _ = do
   t <- Core.doRead s
   putStrLn $ Core.toHex t
 
+greetWrite :: SerialPort -> CommandArgs -> IO ()
+greetWrite s args = do
+  let wType = writeType args
+  let action = case wType of
+                 Write  -> Core.doWrite
+                 Write2 -> Core.doWrite2
+                 Write3 -> Core.doWrite3
+  _ <- action (lock args) (token args) s
+  return ()
+
 
 greet :: CliArgs -> IO ()
 greet args = do
@@ -175,17 +206,21 @@ greet args = do
   Core.doLedColor Core.RedColor s
 
   commandArgs <- return $ cliCommand args
+  putStrLn $ show args
   case commandArgs of
-    InfoArgs -> greetInfo s commandArgs
-    ReadArgs -> greetRead s commandArgs
-    _        -> putStrLn $ show args
+    InfoArgs        -> greetInfo  s commandArgs
+    ReadArgs        -> greetRead  s commandArgs
+    WriteArgs _ _ _ -> greetWrite s commandArgs
 
   Core.doLedColor Core.GreenColor s
   closeSerial s
 
+-- Main
 
 main :: IO ()
-main = greet =<< execParser opts
+main = greet =<< customExecParser defaultPrefs { prefBacktrack = SubparserInline
+                                               , prefShowHelpOnEmpty = True}
+                                  opts
   where
     opts = info (cliParser <**> helper)
       ( fullDesc
