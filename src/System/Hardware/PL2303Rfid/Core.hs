@@ -61,6 +61,7 @@ import           Data.Char (chr, ord)
 import           System.Hardware.Serialport
 import           Data.Bits (xor, shiftL, shiftR)
 import           Data.Hex (hex, unhex)
+import           Control.Monad (when)
 
 -----------
 -- Token --
@@ -375,8 +376,18 @@ recvResponseBody sp i b = do
 recvResponse :: SerialPort -> IO (Either String Response)
 recvResponse sp = do
   -- TODO: rewrite this
-  head1 <- recv sp 1 -- 0xAA
-  head2 <- recv sp 1 -- 0xDD
+  let waitHead = do
+        head1 <- recv sp 1 -- 0xAA
+        head2 <- if head1 == encodeCode [170] then
+                   recv sp 1
+                 else
+                   return ""
+        if head1 == encodeCode [170] && head2 == encodeCode [221] then
+          return (head1, head2)
+        else
+          waitHead
+
+  (head1, head2) <- waitHead
 
   len1 <- recv sp 1
   len2 <- recv sp 1
