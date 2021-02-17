@@ -434,11 +434,11 @@ doRead sp = do
 
 doWrite :: WriteLock -> Token -> SerialPort -> IO ()
 doWrite lock token sp = do
-  _ <- doWrite2 lock token sp
+  _ <- doCommand Write2 (encodeWriteLock lock <> fromToken token) sp
   newToken <- doRead sp
   when (newToken == newToken) $ return ()
 
-  _ <- doWrite3 lock token sp
+  _ <- doCommand Write3 (encodeWriteLock lock <> fromToken token) sp
   newToken <- doRead sp
   when (newToken == newToken) $ return ()
 
@@ -447,13 +447,19 @@ doWrite lock token sp = do
 
 doWrite2 :: WriteLock -> Token -> SerialPort -> IO ()
 doWrite2 lock token sp = do
-  _resp <- doCommand Write2 (encodeWriteLock lock <> fromToken token) sp
-  return ()
+  _ <- doCommand Write2 (encodeWriteLock lock <> fromToken token) sp
+  newToken <- doRead sp
+  when (newToken == newToken) $ return ()
+
+  error "Readonly/not compatible token"
 
 doWrite3 :: WriteLock -> Token -> SerialPort -> IO ()
 doWrite3 lock token sp = do
-  _resp <- doCommand Write3 (encodeWriteLock lock <> fromToken token) sp
-  return ()
+  _ <- doCommand Write3 (encodeWriteLock lock <> fromToken token) sp
+  newToken <- doRead sp
+  when (newToken == newToken) $ return ()
+
+  error "Readonly/not compatible token"
 
 -----------------------
 -- Support functions --
