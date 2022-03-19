@@ -28,8 +28,14 @@ import           Options.Applicative.Builder.Internal (optionMod)
 import           Options.Applicative.Help.Pretty (text, (<+>))
 import           Data.List (elemIndex)
 import           System.Hardware.Serialport
+import           Control.Monad.Catch (throwM, MonadThrow, Exception)
 
 import qualified System.Hardware.PL2303Rfid.Core as Core
+
+-- An expansion MonadThrow for ReadM
+
+instance MonadThrow ReadM where
+  throwM err = readerAbort $ ErrorMsg $ show err
 
 -- Types
 
@@ -92,12 +98,7 @@ tokenParser = parser desc
     parser = argument tokenReader
 
 tokenReader :: ReadM Core.Token
-tokenReader = str >>= reader
-  where
-    returnToken = \x -> case x of
-                          Left er -> readerAbort $ ErrorMsg er
-                          Right t -> return t
-    reader = returnToken . Core.fromHex
+tokenReader = str >>= Core.fromHex
 
 -- | Write type parser.
 writeTypeParser :: Parser WriteType
@@ -206,7 +207,7 @@ greet args = do
   Core.doLedColor Core.RedColor s
 
   commandArgs <- return $ cliCommand args
-  putStrLn $ show args
+  print args
   case commandArgs of
     InfoArgs        -> greetInfo  s commandArgs
     ReadArgs        -> greetRead  s commandArgs

@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.3.
+-- This file has been generated from package.yaml by hpack version 0.34.6.
 --
 -- see: https://github.com/sol/hpack
 
@@ -30,6 +30,7 @@ library
       attoparsec ==0.13.*
     , base >=4.7 && <5
     , bytestring
+    , exceptions
     , hex
     , optparse-applicative ==0.16.*
     , serialport
@@ -46,6 +47,7 @@ executable pl2303rfid
       attoparsec ==0.13.*
     , base >=4.7 && <5
     , bytestring
+    , exceptions
     , hex
     , optparse-applicative ==0.16.*
     , pl2303rfid
